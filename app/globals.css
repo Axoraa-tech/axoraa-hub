@@ -1,0 +1,61 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --bg-canvas: #f4f5f7;
+    --card-surface: #ffffff;
+    --accent-lime: #d4ff32;
+    --accent-lime-hover: #c4f024;
+    --accent-dark: #121316;
+    --text-primary: #0f172a;
+    --text-secondary: #64748b;
+    --border-subtle: #e2e8f0;
+  }
+
+  body {
+    background-color: #f4f5f7;
+    color: #0f172a;
+    font-family: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+/* Custom Scrollbar for smooth neo-minimalist look */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Neon Lime utility classes */
+.bg-lime-neon {
+  background-color: #d4ff32;
+}
+
+.text-lime-neon {
+  color: #121316;
+}
+
+.border-lime-neon {
+  border-color: #d4ff32;
+}
+
+.shadow-card-subtle {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.shadow-card-elevated {
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05), 0 2px 6px -1px rgba(0, 0, 0, 0.03);
+}
