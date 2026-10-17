@@ -9,8 +9,10 @@
  * 5. Select type: "Web app".
  * 6. Set Description: "Axoraa Operations Bridge".
  * 7. Set Execute as: "Me" (your Google account).
- * 8. Set Who has access: "Anyone" (allows Axoraa frontend to communicate without complex OAuth).
- * 9. Click Deploy, copy the "Web app URL" (ending in /exec), and paste it into Axoraa Settings!
+ * 8. Set Who has access: "Anyone" — requests are still rejected unless they carry the shared token.
+ * 9. Project Settings > Script Properties: add AXORAA_TOKEN = a long random string.
+ * 10. Put the Web app URL (ending in /exec) in SHEETS_WEBAPP_URL and the same token in SHEETS_API_TOKEN
+ *     in the Axoraa server's .env.local. The browser never sees either value.
  */
 
 export const GOOGLE_APPS_SCRIPT_TEMPLATE = `/**
@@ -18,8 +20,16 @@ export const GOOGLE_APPS_SCRIPT_TEMPLATE = `/**
  * Connects Axoraa Frontend directly to your Google Sheets Workbook
  */
 
+function isAuthorized(token) {
+  var expected = PropertiesService.getScriptProperties().getProperty("AXORAA_TOKEN");
+  return !!expected && token === expected;
+}
+
 function doGet(e) {
   try {
+    if (!isAuthorized(e && e.parameter ? e.parameter.token : "")) {
+      return respondJSON({ success: false, error: "Unauthorized" });
+    }
     var ss = SpreadsheetApp.getActiveSpreadsheet();
     var sheet = ss.getSheetByName("Daily Work Log") || ss.getSheets()[0];
     var data = sheet.getDataRange().getValues();
@@ -68,6 +78,9 @@ function doGet(e) {
 function doPost(e) {
   try {
     var payload = JSON.parse(e.postData.contents);
+    if (!isAuthorized(payload.token)) {
+      return respondJSON({ success: false, error: "Unauthorized" });
+    }
     var action = payload.action;
     var ss = SpreadsheetApp.getActiveSpreadsheet();
     var sheet = ss.getSheetByName("Daily Work Log") || ss.getSheets()[0];

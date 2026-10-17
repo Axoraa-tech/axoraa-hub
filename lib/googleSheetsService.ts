@@ -1,4 +1,5 @@
 import { DailyWorkLogEntry } from "./types";
+import { downloadCsv, WORK_LOG_COLUMNS } from "./export";
 
 export interface SyncResult {
   success: boolean;
@@ -8,188 +9,59 @@ export interface SyncResult {
 }
 
 export const GoogleSheetsService = {
-  /**
-   * Fetch all rows from Google Apps Script Web App
-   */
-  async fetchFromGoogleSheet(webAppUrl: string): Promise<SyncResult> {
-    if (!webAppUrl || !webAppUrl.startsWith("http")) {
-      return { success: false, message: "Invalid Web App URL provided." };
-    }
-
+  /** Whether the server has a Google Sheet bridge configured. */
+  async status(): Promise<{ configured: boolean }> {
     try {
-      const response = await fetch(webAppUrl, {
-        method: "GET",
-        headers: { Accept: "application/json" },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error ${response.status}: ${response.statusText}`);
-      }
-
-      const result = await response.json();
-      if (result.success && Array.isArray(result.rows)) {
-        return {
-          success: true,
-          message: `Successfully fetched ${result.rows.length} rows from Google Sheet`,
-          data: result.rows,
-        };
-      } else {
-        return {
-          success: false,
-          message: result.error || "Failed to fetch data from Google Sheet",
-          error: result.error,
-        };
-      }
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : String(err);
-      return {
-        success: false,
-        message: "Failed to connect to Google Sheet. Check URL or permissions.",
-        error: message,
-      };
+      const res = await fetch("/api/sheets?status", { cache: "no-store" });
+      if (!res.ok) return { configured: false };
+      return await res.json();
+    } catch {
+      return { configured: false };
     }
   },
 
-  /**
-   * Push all current work logs to Google Sheet (Sync All)
-   */
-  async syncAllToGoogleSheet(webAppUrl: string, logs: DailyWorkLogEntry[]): Promise<SyncResult> {
-    if (!webAppUrl || !webAppUrl.startsWith("http")) {
-      return { success: false, message: "Invalid Web App URL provided." };
-    }
-
+  /** Fetch rows through the authenticated server route (members receive only their own rows). */
+  async fetchFromGoogleSheet(): Promise<SyncResult> {
     try {
-      const payload = {
-        action: "SYNC_ALL",
-        data: logs,
-      };
-
-      const response = await fetch(webAppUrl, {
-        method: "POST",
-        headers: { "Content-Type": "text/plain;charset=utf-8" }, // Apps Script accepts text/plain to avoid CORS preflight options issues
-        body: JSON.stringify(payload),
-      });
-
-      const result = await response.json();
-      if (result.success) {
-        return {
-          success: true,
-          message: result.message || `Successfully synced ${logs.length} rows to Google Sheet`,
-        };
-      } else {
-        return {
-          success: false,
-          message: result.error || "Google Sheet sync failed",
-          error: result.error,
-        };
+      const res = await fetch("/api/sheets", { cache: "no-store" });
+      const body = await res.json();
+      if (!body.configured) return { success: false, message: "Google Sheets is not configured on the server yet." };
+      if (!res.ok || !Array.isArray(body.rows)) {
+        return { success: false, message: body.error || "Failed to fetch data from Google Sheet", error: body.error };
       }
+      return { success: true, message: `Loaded ${body.rows.length} rows from Google Sheet`, data: body.rows };
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : String(err);
-      return {
-        success: false,
-        message: "Network or permission error while sending data to Google Sheet.",
-        error: message,
-      };
+      return { success: false, message: "Could not reach the server.", error: err instanceof Error ? err.message : String(err) };
     }
   },
 
-  /**
-   * Append a single work log row to Google Sheet
-   */
-  async appendLogToGoogleSheet(webAppUrl: string, entry: DailyWorkLogEntry): Promise<SyncResult> {
-    if (!webAppUrl || !webAppUrl.startsWith("http")) {
-      return { success: false, message: "Invalid Web App URL" };
-    }
-
-    try {
-      const payload = {
-        action: "ADD_LOG",
-        data: entry,
-      };
-
-      const response = await fetch(webAppUrl, {
-        method: "POST",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify(payload),
-      });
-
-      const result = await response.json();
-      return {
-        success: !!result.success,
-        message: result.message || "Row appended to Google Sheet",
-      };
-    } catch (err: unknown) {
-      return {
-        success: false,
-        message: "Failed to append row to Google Sheet",
-        error: err instanceof Error ? err.message : String(err),
-      };
-    }
+  /** Overwrite the sheet with the given rows (administrator only). */
+  async syncAllToGoogleSheet(logs: DailyWorkLogEntry[]): Promise<SyncResult> {
+    return post({ action: "SYNC_ALL", data: logs }, `Synced ${logs.length} rows to Google Sheet`);
   },
 
-  /**
-   * Export all rows to CSV format for instant backup / offline spreadsheet import
-   */
+  /** Append a single work log row. */
+  async appendLogToGoogleSheet(entry: DailyWorkLogEntry): Promise<SyncResult> {
+    return post({ action: "ADD_LOG", data: entry }, "Row appended to Google Sheet");
+  },
+
+  /** CSV backup of work logs. */
   exportToCsv(logs: DailyWorkLogEntry[]): void {
-    const headers = [
-      "Date",
-      "Developer Name",
-      "Project",
-      "Repository",
-      "Module / Feature Area",
-      "Work Type",
-      "Task / Work Description",
-      "GitHub PR Number",
-      "Work Status",
-      "Priority",
-      "Hours / Effort",
-      "Blocked?",
-      "Blocker / Dependency",
-      "Review Required?",
-      "Reviewer",
-      "Deployment / Release",
-      "Production Impact",
-      "Notes",
-      "Last Updated",
-    ];
-
-    const escapeCsv = (val: string | number) => {
-      const str = String(val ?? "").replace(/"/g, '""');
-      return `"${str}"`;
-    };
-
-    const csvRows = [headers.join(",")];
-    for (const log of logs) {
-      const row = [
-        escapeCsv(log.date),
-        escapeCsv(log.developerName),
-        escapeCsv(log.project),
-        escapeCsv(log.repository),
-        escapeCsv(log.module),
-        escapeCsv(log.workType),
-        escapeCsv(log.taskDescription),
-        escapeCsv(log.githubPr),
-        escapeCsv(log.workStatus),
-        escapeCsv(log.priority),
-        escapeCsv(log.hours),
-        escapeCsv(log.isBlocked),
-        escapeCsv(log.blockerDetails),
-        escapeCsv(log.reviewRequired),
-        escapeCsv(log.reviewer),
-        escapeCsv(log.deployment),
-        escapeCsv(log.productionImpact),
-        escapeCsv(log.notes),
-        escapeCsv(log.lastUpdated),
-      ];
-      csvRows.push(row.join(","));
-    }
-
-    const csvContent = "data:text/csv;charset=utf-8," + encodeURIComponent(csvRows.join("\n"));
-    const link = document.createElement("a");
-    link.setAttribute("href", csvContent);
-    link.setAttribute("download", `axoraa_dev_work_log_${new Date().toISOString().substring(0, 10)}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    downloadCsv(`axoraa_work_log_${new Date().toISOString().substring(0, 10)}.csv`, logs, WORK_LOG_COLUMNS);
   },
 };
+
+async function post(payload: object, okMessage: string): Promise<SyncResult> {
+  try {
+    const res = await fetch("/api/sheets", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const body = await res.json();
+    if (res.ok && body.success) return { success: true, message: body.message || okMessage };
+    return { success: false, message: body.error || "Google Sheet request failed", error: body.error };
+  } catch (err: unknown) {
+    return { success: false, message: "Could not reach the server.", error: err instanceof Error ? err.message : String(err) };
+  }
+}

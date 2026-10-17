@@ -1,36 +1,43 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Axoraa Hub
 
-## Getting Started
+Daily work, pipeline, delivery and collections tracking for the Axoraa team. Google Sheets is the database.
 
-First, run the development server:
+## Run locally
 
 ```bash
+npm install
+cp .env.example .env.local   # then fill it in (see below)
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Accounts & access
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Route | Who can open it |
+| --- | --- |
+| `/login` | everyone |
+| `/admin` | the `admin` account only (super user — sees and edits everything) |
+| `/u/<username>` | that person, or the admin (e.g. only Akshar can open `/u/akshar`) |
+| `/api/sheets` | signed-in users; members only receive and write their **own** rows |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Usernames live in `lib/people.ts`. An account can sign in only when its password hash is set in the environment:
 
-## Learn More
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"   # AUTH_SECRET
+node scripts/hash-password.mjs "their-password"                                    # AUTH_HASH_<USERNAME>
+```
 
-To learn more about Next.js, take a look at the following resources:
+Sessions are HMAC-signed, HTTP-only cookies (12h). `proxy.ts` redirects early; every page re-checks the session on the server (`lib/auth/dal.ts`). Failed logins are throttled (5 per 15 min per username + IP).
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+To make someone else a super user, change their `role` to `"admin"` in `lib/people.ts`.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Google Sheets
 
-## Deploy on Vercel
+1. Open the admin → **Google Sheets** panel → **Setup**, copy the Apps Script into the workbook.
+2. In Apps Script → Script properties, add `AXORAA_TOKEN` (long random string). Deploy as a Web app.
+3. Set `SHEETS_WEBAPP_URL` and `SHEETS_API_TOKEN` in `.env.local` and restart.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+The URL and token stay on the server; browsers only talk to `/api/sheets`. Without them the hub runs on the browser's local storage (shown as "Local data" in the header).
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Exports
+
+Every table has a CSV button, and **Export Center** downloads work logs, team summary, deals, visits, clients, projects and invoices for any week, month or year (UTF-8 CSV, opens cleanly in Excel / Sheets). "Print / save as PDF" prints the current view.

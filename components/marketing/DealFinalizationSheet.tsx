@@ -2,21 +2,7 @@
 
 import React, { useState, useMemo } from "react";
 import { MarketingDeal } from "@/lib/types";
-import {
-  Search,
-  Filter,
-  Plus,
-  Download,
-  MapPin,
-  Calendar,
-  ExternalLink,
-  Edit2,
-  CheckCircle2,
-  AlertTriangle,
-  Clock,
-  Phone,
-  Mail,
-} from "lucide-react";
+import { Search, Plus, Download, MapPin, ExternalLink, Edit2 } from "lucide-react";
 
 interface DealFinalizationSheetProps {
   deals: MarketingDeal[];
@@ -105,7 +91,7 @@ export const DealFinalizationSheet: React.FC<DealFinalizationSheetProps> = ({
       "Notes & Next Steps",
     ];
 
-    const escapeCsv = (val: any) => `"${String(val ?? "").replace(/"/g, '""')}"`;
+    const escapeCsv = (val: unknown) => `"${String(val ?? "").replace(/"/g, '""')}"`;
     const rows = [headers.join(",")];
 
     for (const d of filteredDeals) {
@@ -158,13 +144,13 @@ export const DealFinalizationSheet: React.FC<DealFinalizationSheetProps> = ({
   return (
     <div className="space-y-4">
       {/* Top Banner */}
-      <div className="bg-white rounded-3xl p-5 shadow-card-subtle border border-zinc-200/80 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+      <div className="card p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h2 className="text-xl font-bold text-zinc-900 tracking-tight">
+            <h2 className="text-[22px] font-medium tracking-[-0.03em]">
               Deal Finalization Tracker
             </h2>
-            <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-zinc-100 text-zinc-700">
+            <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-zinc-100 text-zinc-700">
               {filteredDeals.length} Deals
             </span>
           </div>
@@ -176,20 +162,20 @@ export const DealFinalizationSheet: React.FC<DealFinalizationSheetProps> = ({
         <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={onOpenInteractions}
-            className="px-3.5 py-2 bg-white border border-zinc-200 hover:border-zinc-300 rounded-xl text-xs font-semibold text-zinc-800 transition-colors shadow-xs"
+            className="px-3.5 py-2 bg-white border border-zinc-200 hover:border-zinc-300 rounded-full text-xs font-semibold text-zinc-800 transition-colors"
           >
             Visit Log
           </button>
           <button
             onClick={handleExportCsv}
-            className="px-3.5 py-2 bg-white border border-zinc-200 hover:border-zinc-300 rounded-xl text-xs font-semibold text-zinc-800 transition-colors flex items-center gap-1.5 shadow-xs"
+            className="px-3.5 py-2 bg-white border border-zinc-200 hover:border-zinc-300 rounded-full text-xs font-semibold text-zinc-800 transition-colors flex items-center gap-1.5"
           >
             <Download className="w-3.5 h-3.5 text-zinc-600" />
             <span>Export CSV</span>
           </button>
           <button
             onClick={onAddDeal}
-            className="px-4 py-2 bg-zinc-950 hover:bg-zinc-800 text-white rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5 shadow-xs"
+            className="px-4 py-2 bg-zinc-950 hover:bg-zinc-800 text-white rounded-full text-xs font-medium transition-colors flex items-center gap-1.5"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Add Lead Deal</span>
@@ -198,7 +184,7 @@ export const DealFinalizationSheet: React.FC<DealFinalizationSheetProps> = ({
       </div>
 
       {/* Filter Toolbar */}
-      <div className="bg-white rounded-3xl p-4 shadow-card-subtle border border-zinc-200/80 flex flex-col md:flex-row md:items-center justify-between gap-3">
+      <div className="card p-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
         <div className="relative flex-1 max-w-md">
           <Search className="w-4 h-4 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
@@ -250,10 +236,10 @@ export const DealFinalizationSheet: React.FC<DealFinalizationSheetProps> = ({
       </div>
 
       {/* Main 36-Column Table */}
-      <div className="bg-white rounded-3xl shadow-card-subtle border border-zinc-200/80 overflow-hidden">
+      <div className="card overflow-hidden">
         <div className="overflow-x-auto max-h-[650px] overflow-y-auto">
           <table className="w-full text-left text-xs border-collapse min-w-[1450px]">
-            <thead className="sticky top-0 bg-zinc-50/95 backdrop-blur-xs border-b border-zinc-200 z-10 text-[10px] uppercase font-bold text-zinc-500 tracking-wider">
+            <thead className="sticky top-0 bg-surface backdrop-blur-xs border-b border-zinc-200 z-10 text-[11.5px] font-medium text-zinc-500">
               <tr>
                 <th className="py-3 px-4">Lead ID</th>
                 <th className="py-3 px-4">Company & Location</th>
@@ -272,11 +258,11 @@ export const DealFinalizationSheet: React.FC<DealFinalizationSheetProps> = ({
             <tbody className="divide-y divide-zinc-100 text-zinc-800">
               {filteredDeals.map((deal) => (
                 <tr key={deal.id} className="hover:bg-zinc-50/80 transition-colors group">
-                  <td className="py-3.5 px-4 font-mono font-bold text-zinc-900 whitespace-nowrap">
+                  <td className="py-3.5 px-4 font-mono font-medium text-zinc-900 whitespace-nowrap">
                     {deal.leadId}
                   </td>
                   <td className="py-3.5 px-4">
-                    <div className="font-bold text-zinc-900">{deal.companyName}</div>
+                    <div className="font-medium text-zinc-900">{deal.companyName}</div>
                     <div className="text-[11px] text-zinc-500 mt-0.5 flex items-center gap-1">
                       <MapPin className="w-3 h-3 text-zinc-400" />
                       <span>{deal.city}, {deal.stateRegion}</span>
@@ -293,7 +279,7 @@ export const DealFinalizationSheet: React.FC<DealFinalizationSheetProps> = ({
                     </div>
                   </td>
                   <td className="py-3.5 px-4 whitespace-nowrap">
-                    <div className="flex items-center gap-1.5 font-bold text-zinc-900">
+                    <div className="flex items-center gap-1.5 font-medium text-zinc-900">
                       <div className="w-5 h-5 rounded-full bg-zinc-900 text-white flex items-center justify-center text-[10px]">
                         {deal.marketingPerson[0]}
                       </div>
@@ -307,7 +293,7 @@ export const DealFinalizationSheet: React.FC<DealFinalizationSheetProps> = ({
                   <td className="py-3.5 px-3 whitespace-nowrap text-zinc-600">
                     {deal.leadSource}
                   </td>
-                  <td className="py-3.5 px-3 font-mono font-bold text-zinc-900 whitespace-nowrap">
+                  <td className="py-3.5 px-3 font-mono font-medium text-zinc-900 whitespace-nowrap">
                     {formatInr(deal.estimatedDealValue)}
                   </td>
                   <td className="py-3.5 px-3 font-mono text-zinc-600 whitespace-nowrap">
@@ -315,7 +301,7 @@ export const DealFinalizationSheet: React.FC<DealFinalizationSheetProps> = ({
                   </td>
                   <td className="py-3.5 px-3 whitespace-nowrap">
                     <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                         deal.leadStatus === "Closed Won"
                           ? "bg-emerald-50 text-emerald-800"
                           : deal.leadStatus === "Negotiation"
@@ -333,7 +319,7 @@ export const DealFinalizationSheet: React.FC<DealFinalizationSheetProps> = ({
                   </td>
                   <td className="py-3.5 px-3 whitespace-nowrap">
                     <span
-                      className={`text-[10px] font-bold px-2 py-0.5 rounded ${
+                      className={`text-[10px] font-medium px-2 py-0.5 rounded ${
                         deal.followUpPriority === "High"
                           ? "bg-rose-100 text-rose-800"
                           : deal.followUpPriority === "Medium"

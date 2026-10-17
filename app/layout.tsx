@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AXORAA · Unified Operations Platform",
-  description: "All-in-one team management, developer tracking, budget, marketing, and client operations platform.",
+  title: "Axoraa Hub",
+  description: "Daily work, pipeline and delivery tracking for the Axoraa team.",
 };
 
 export default function RootLayout({
@@ -23,11 +23,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col bg-[#f4f5f7]">{children}</body>
+    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
+      <body className="min-h-full bg-canvas text-ink">{children}</body>
     </html>
   );
 }
