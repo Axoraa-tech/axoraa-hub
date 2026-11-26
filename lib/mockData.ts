@@ -11,6 +11,8 @@ import {
   ProjectProgressRecord,
   PaymentBillingRecord,
   CompanyTopLineMetrics,
+  ContentPost,
+  Campaign,
 } from "./types";
 
 // =========================================================================
@@ -1096,3 +1098,92 @@ export const INITIAL_PAYMENT_BILLING: PaymentBillingRecord[] = [
     milestoneDescription: "Contract Advance Payment (Project currently paused)",
   },
 ];
+
+// =========================================================================
+// DEMO CONTENT AND CAMPAIGNS (generic sample rows for a first-run browser)
+// =========================================================================
+export const DEMO_CAMPAIGNS: Campaign[] = [
+  {
+    id: "cmp-demo-1",
+    name: "Bengaluru SME lead form",
+    platform: "Meta",
+    objective: "leads",
+    status: "Active",
+    startDate: "2026-09-01",
+    endDate: "2026-10-31",
+    dailyBudget: 1500,
+    totalBudget: 90000,
+    spend: 38500,
+    leads: 46,
+    ownerName: "Kamil",
+    audience: "Business owners in Bengaluru, 28 to 55, interested in retail and distribution software",
+    notes: "Lead form asks for company size and the process they want to move off spreadsheets.",
+    source: "manual",
+  },
+  {
+    id: "cmp-demo-2",
+    name: "Manufacturing outreach, Peenya and Bommasandra",
+    platform: "LinkedIn",
+    objective: "leads",
+    status: "Planning",
+    startDate: "2026-10-15",
+    totalBudget: 40000,
+    spend: 0,
+    leads: 0,
+    ownerName: "Anusha",
+    audience: "Plant heads and operations managers at small and mid-size manufacturers",
+    notes: "Pair with field visits in the same week.",
+    source: "manual",
+  },
+];
+
+export const DEMO_POSTS: ContentPost[] = [
+  {
+    id: "post-demo-1",
+    channel: "linkedin",
+    status: "published",
+    title: "Case study: dispatch app for a distributor",
+    caption:
+      "A Bengaluru distributor moved order dispatch from WhatsApp groups to a simple web app. Orders now reach the warehouse in minutes, and the owner sees what is pending at the end of each day.",
+    hashtags: ["#Bengaluru", "#SmallBusiness", "#WebApps"],
+    ownerName: "Anusha",
+    publishedAt: "2026-09-18T05:30:00.000Z",
+    metrics: { reach: 1840, engagements: 62 },
+  },
+  {
+    id: "post-demo-2",
+    channel: "facebook_page",
+    status: "scheduled",
+    title: "Lead form: move your process off spreadsheets",
+    caption:
+      "Still tracking orders and payments in spreadsheets? Tell us how your team works today and we will suggest the smallest app that fixes it.",
+    hashtags: ["#Karnataka", "#BusinessSoftware"],
+    ownerName: "Kamil",
+    scheduledAt: "2026-09-29T04:30:00.000Z",
+    campaignId: "cmp-demo-1",
+  },
+  {
+    id: "post-demo-3",
+    channel: "instagram",
+    status: "draft",
+    title: "Behind the build: field visit checklist",
+    caption: "What our team checks on the first visit before quoting an app: the people, the paperwork and the one report the owner wants every morning.",
+    hashtags: ["#AppDevelopment", "#Bengaluru"],
+    imageBrief: "Photo of a printed checklist on a shop counter, natural light, no faces.",
+    ownerName: "Kamil",
+  },
+];
+
+/** Ids of every row the demo seed writes. Rows with these ids are treated as demo data and never uploaded. */
+export const MOCK_IDS: ReadonlySet<string> = new Set<string>([
+  ...INITIAL_WORK_LOGS.map((r) => r.id),
+  ...INITIAL_ROSTER.map((r) => r.id),
+  ...INITIAL_REPOSITORIES.map((r) => r.id),
+  ...INITIAL_MARKETING_DEALS.map((r) => r.id),
+  ...INITIAL_INTERACTIONS.map((r) => r.id),
+  ...INITIAL_CLIENT_MASTER.map((r) => r.id),
+  ...INITIAL_PROJECT_PROGRESS.map((r) => r.id),
+  ...INITIAL_PAYMENT_BILLING.map((r) => r.id),
+  ...DEMO_POSTS.map((r) => r.id),
+  ...DEMO_CAMPAIGNS.map((r) => r.id),
+]);
