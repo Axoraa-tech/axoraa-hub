@@ -1,3 +1,17 @@
+import type { AgentKey, AgentLanguage, AgentOutput, AgentRef, AgentUsage } from "./agents/types";
+import type { ChannelId } from "./integrations/types";
+import type { EntityKey } from "./data/entities";
+import type { HubSettings } from "./settings";
+
+/** Fields every stored record may carry. Timestamps are ISO strings with a Z. `demo` is local only and never sent. */
+export interface BaseRecord {
+  id: string;
+  createdAt?: string;
+  updatedAt?: string;
+  createdBy?: string;
+  demo?: boolean;
+}
+
 export type WorkStatus = "Completed" | "In Progress" | "Blocked";
 export type PriorityLevel = "Critical" | "High" | "Medium" | "Low";
 export type BlockedFlag = "Yes" | "No";
@@ -54,6 +68,10 @@ export interface DailyWorkLogEntry {
   productionImpact: ProductionImpactLevel;
   notes: string;
   lastUpdated: string;
+  createdAt?: string;
+  updatedAt?: string;
+  createdBy?: string;
+  demo?: boolean;
 }
 
 export interface DeveloperRosterMember {
@@ -65,6 +83,10 @@ export interface DeveloperRosterMember {
   joiningDate: string;
   notes: string;
   avatar?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  createdBy?: string;
+  demo?: boolean;
 }
 
 export interface RepositoryMapping {
@@ -74,6 +96,10 @@ export interface RepositoryMapping {
   type: string;
   status: "Active" | "Archived" | "Maintenance";
   description: string;
+  createdAt?: string;
+  updatedAt?: string;
+  createdBy?: string;
+  demo?: boolean;
 }
 
 export interface EscalationLevel {
@@ -140,7 +166,8 @@ export type LeadSource =
   | "Referral"
   | "LinkedIn / Outreach"
   | "Exhibition / Event"
-  | "Cold Call";
+  | "Cold Call"
+  | "Meta Lead Ad";
 
 export type InteractionOutcome =
   | "Positive - Advancing"
@@ -190,6 +217,33 @@ export interface MarketingDeal {
   dueStatus: "Overdue" | "Today" | "Upcoming" | "Completed";
   conversionDate?: string;
   notesNextSteps: string;
+  createdAt?: string;
+  updatedAt?: string;
+  createdBy?: string;
+  demo?: boolean;
+  campaignId?: string;
+  externalSource?: "meta_lead_ads" | "website" | "manual";
+  externalId?: string;
+  formId?: string;
+  adId?: string;
+  assignedAt?: string;
+  /** 'auto' asks the server (or local mode) for the next quotation number. */
+  quoteNumber?: string;
+  quote?: QuoteData;
+}
+
+export interface DocLine {
+  description: string;
+  sac?: string;
+  amount: number;
+}
+
+export interface QuoteData {
+  issueDate: string;
+  validUntil: string;
+  gstRate: number;
+  lines: DocLine[];
+  notes?: string;
 }
 
 export interface MarketingInteraction {
@@ -217,6 +271,11 @@ export interface MarketingInteraction {
   nextFollowUpDate: string;
   followUpPriority: "High" | "Medium" | "Low";
   loggedBy: string;
+  dealId?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  createdBy?: string;
+  demo?: boolean;
 }
 
 // -------------------------------------------------------------
@@ -224,7 +283,7 @@ export interface MarketingInteraction {
 // -------------------------------------------------------------
 
 export interface FounderMatrixStats {
-  founder: "Akshar" | "Abhinav" | "Adnaan" | "Bhuvan";
+  founder: "Akshar" | "Abhinav" | "Adnaan" | "Bhuvan" | string;
   role: string;
   clientsBrought: number;
   totalDealValue: number; // in INR ₹
@@ -245,12 +304,23 @@ export interface ClientMasterRecord {
   projectId?: string; // PRJ-001 to PRJ-005
   companyName: string;
   industry: string;
-  salesOwner: "Akshar" | "Abhinav" | "Adnaan" | "Bhuvan";
+  salesOwner: "Akshar" | "Abhinav" | "Adnaan" | "Bhuvan" | string;
   dealValue: number; // in INR ₹
   dealStatus: "Won" | "Negotiation" | "Proposal Sent" | "Discussion" | "On Hold";
   contractScope: string;
   signedDate: string;
   deliveryStatus: ProjectDeliveryStatus;
+  contactPerson?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  gstin?: string;
+  billingAddress?: string;
+  state?: string;
+  sourceDealId?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  createdBy?: string;
+  demo?: boolean;
 }
 
 export interface ProjectProgressRecord {
@@ -258,12 +328,16 @@ export interface ProjectProgressRecord {
   projectId: string; // PRJ-001 to PRJ-005
   clientId: string; // SF-001 to SF-005
   projectName: string;
-  projectManager: "Akshar" | "Abhinav" | "Adnaan" | "Bhuvan";
+  projectManager: "Akshar" | "Abhinav" | "Adnaan" | "Bhuvan" | string;
   status: ProjectDeliveryStatus;
   completionPercentage: number; // e.g. 100, 60, 82.2, 88.9, 30
   blockerDetails: string;
   blockerOwner: string;
   targetReleaseDate: string;
+  createdAt?: string;
+  updatedAt?: string;
+  createdBy?: string;
+  demo?: boolean;
 }
 
 export interface PaymentBillingRecord {
@@ -279,6 +353,29 @@ export interface PaymentBillingRecord {
   status: "Fully Paid" | "Pending" | "Overdue";
   dueDate: string;
   milestoneDescription: string;
+  issueDate?: string;
+  /** Percent; a missing value means 18. */
+  gstRate?: number;
+  taxableAmount?: number;
+  placeOfSupply?: string;
+  sac?: string;
+  payments?: PaymentReceipt[];
+  notes?: string;
+  projectName?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  createdBy?: string;
+  demo?: boolean;
+}
+
+export interface PaymentReceipt {
+  id: string;
+  date: string;
+  amount: number;
+  tdsAmount?: number;
+  tdsSection?: "194J" | "194C" | "Other";
+  mode: "UPI" | "NEFT/RTGS" | "Cheque" | "Cash" | "Card" | "Other";
+  reference: string;
 }
 
 export interface CompanyTopLineMetrics {
@@ -327,4 +424,103 @@ export interface GoogleSheetsConfig {
   lastSyncedAt: string | null;
   status: "connected" | "disconnected" | "syncing" | "error";
   errorMessage?: string;
+}
+
+// -------------------------------------------------------------
+// CONTENT, CAMPAIGNS, ASSISTANT DRAFTS, ACTIVITY, BACKUP
+// -------------------------------------------------------------
+
+export type ContentStatus = "idea" | "draft" | "in_review" | "scheduled" | "published";
+
+export interface ContentPost extends BaseRecord {
+  channel: ChannelId;
+  status: ContentStatus;
+  title: string;
+  caption: string;
+  hashtags: string[];
+  assetUrl?: string;
+  imageBrief?: string;
+  scheduledAt?: string;
+  ownerName: string;
+  campaignId?: string;
+  draftId?: string;
+  externalId?: string;
+  permalink?: string;
+  publishedAt?: string;
+  metrics?: { reach?: number | null; engagements?: number | null };
+}
+
+export interface CampaignPlan {
+  name: string;
+  objective: string;
+  budget: { dailyInr: number; totalInr: number; split: { label: string; percent: number }[] };
+  audiences: {
+    name: string;
+    locations: string[];
+    ageMin: number;
+    ageMax: number;
+    interests: string[];
+    notes: string;
+  }[];
+  creatives: { primaryText: string; headline: string; description: string; cta: string; imageBrief: string }[];
+  leadFormQuestions: string[];
+  kpis: { targetCplInr: number; expectedLeads: number };
+  notes: string;
+}
+
+export interface Campaign extends BaseRecord {
+  name: string;
+  platform: "Meta" | "Google Ads" | "LinkedIn" | "Email / Outreach" | "SEO / Content" | "Offline / Event";
+  objective: "leads" | "traffic" | "awareness" | "engagement";
+  status: "Planning" | "Active" | "Paused" | "Completed";
+  startDate: string;
+  endDate?: string;
+  dailyBudget?: number;
+  totalBudget: number;
+  spend: number;
+  leads: number;
+  ownerName: string;
+  audience: string;
+  notes: string;
+  source: "manual" | "meta";
+  externalCampaignId?: string;
+  adAccountId?: string;
+  plan?: CampaignPlan;
+  draftId?: string;
+}
+
+/** createdBy is the account id of the person who ran the agent. */
+export interface AgentDraft extends BaseRecord {
+  agentKey: AgentKey;
+  title: string;
+  status: "draft" | "used" | "archived";
+  input: Record<string, unknown>;
+  output: AgentOutput;
+  language?: AgentLanguage;
+  versions?: { at: string; instruction: string; output: AgentOutput }[];
+  ref?: AgentRef;
+  model: string;
+  usage?: AgentUsage;
+  createdByName: string;
+}
+
+/** Example actions: 'deal.created', 'deal.updated', 'deal.stage_changed', 'deal.deleted', 'invoice.payment_recorded', 'agent.run', 'meta.lead_received'. */
+export interface ActivityEvent {
+  id: string;
+  at: string;
+  actorId: string;
+  actorName: string;
+  action: string;
+  entity: EntityKey;
+  entityId: string;
+  summary: string;
+}
+
+export interface HubBackup {
+  format: "axoraa-hub-backup";
+  version: 2;
+  exportedAt: string;
+  exportedBy: string;
+  data: Partial<Record<EntityKey, unknown[]>>;
+  settings: HubSettings;
 }

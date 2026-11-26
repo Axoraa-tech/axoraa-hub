@@ -63,11 +63,24 @@ export async function login(_prev: LoginState, formData: FormData): Promise<Logi
 
   const home = homePathFor(account);
   // Only follow `next` when it stays inside this account's area.
-  const safeNext =
-    next.startsWith("/") && !next.startsWith("//") && (account.role === "admin" || next.startsWith(home))
-      ? next
-      : home;
-  redirect(safeNext);
+  redirect(resolveNext(next, account.role === "admin", home));
+}
+
+// Only same-origin, in-app paths. Rejects backslashes, control chars and protocol-relative forms.
+function resolveNext(next: string, isAdmin: boolean, home: string): string {
+  if (!next.startsWith("/") || next.startsWith("//")) return home;
+  if (/[\\\u0000-\u001f\u007f]/.test(next)) return home;
+  let url: URL;
+  try {
+    url = new URL(next, "http://x");
+  } catch {
+    return home;
+  }
+  if (url.origin !== "http://x") return home;
+  const path = url.pathname;
+  const base = home.replace(/\/+$/, "");
+  if (!isAdmin && path !== base && !path.startsWith(base + "/")) return home;
+  return next;
 }
 
 export async function logout() {

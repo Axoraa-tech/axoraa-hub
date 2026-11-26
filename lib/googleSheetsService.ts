@@ -1,5 +1,6 @@
 import { DailyWorkLogEntry } from "./types";
 import { downloadCsv, WORK_LOG_COLUMNS } from "./export";
+import { todayKeyIST } from "./format";
 
 export interface SyncResult {
   success: boolean;
@@ -9,14 +10,18 @@ export interface SyncResult {
 }
 
 export const GoogleSheetsService = {
-  /** Whether the server has a Google Sheet bridge configured. */
-  async status(): Promise<{ configured: boolean }> {
+  /** Whether the server has a Google Sheet bridge configured, and which Apps Script version answers. */
+  async status(): Promise<{ configured: boolean; version: 1 | 2 | null }> {
     try {
       const res = await fetch("/api/sheets?status", { cache: "no-store" });
-      if (!res.ok) return { configured: false };
-      return await res.json();
+      if (!res.ok) return { configured: false, version: null };
+      const body: unknown = await res.json();
+      const b = body && typeof body === "object" ? (body as Record<string, unknown>) : {};
+      const configured = b.configured === true;
+      const version = b.version === 2 ? 2 : b.version === 1 ? 1 : null;
+      return { configured, version: configured ? version : null };
     } catch {
-      return { configured: false };
+      return { configured: false, version: null };
     }
   },
 
@@ -47,7 +52,7 @@ export const GoogleSheetsService = {
 
   /** CSV backup of work logs. */
   exportToCsv(logs: DailyWorkLogEntry[]): void {
-    downloadCsv(`axoraa_work_log_${new Date().toISOString().substring(0, 10)}.csv`, logs, WORK_LOG_COLUMNS);
+    downloadCsv(`axoraa_work_log_${todayKeyIST()}.csv`, logs, WORK_LOG_COLUMNS);
   },
 };
 

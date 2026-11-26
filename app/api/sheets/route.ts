@@ -1,81 +1,79 @@
-// Authenticated bridge to the Google Sheets Apps Script web app.
-// The Apps Script URL and its shared token stay on the server; the browser only talks to this route.
-import { NextRequest, NextResponse } from "next/server";
+// Authenticated bridge to the Google Sheets Apps Script web app for work logs (the v1 contract).
+// The Apps Script URL and its shared token stay on the server (lib/server/sheets.ts); the browser only
+// talks to this route. Members only ever read and write their own rows; SYNC_ALL is admin-only.
+// String cells are escaped against formula injection in lib/server/sheets.ts (csvSafe).
+import { NextResponse, type NextRequest } from "next/server";
 import { getViewer } from "@/lib/auth/dal";
 import type { DailyWorkLogEntry } from "@/lib/types";
+import { addWorkLog, getScriptVersion, listWorkLogs, sheetsConfig, SheetsError, syncAllWorkLogs } from "@/lib/server/sheets";
 
-function sheetsConfig() {
-  const url = process.env.SHEETS_WEBAPP_URL;
-  const token = process.env.SHEETS_API_TOKEN;
-  return url && token && url.startsWith("https://") ? { url, token } : null;
+const MAX_BODY = 1024 * 1024;
+const NO_STORE = { "Cache-Control": "no-store" };
+
+function json(body: unknown, status = 200) {
+  return NextResponse.json(body, { status, headers: NO_STORE });
 }
 
 export async function GET(req: NextRequest) {
   const viewer = await getViewer();
-  if (!viewer) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!viewer) return json({ error: "Unauthorized" }, 401);
 
   const cfg = sheetsConfig();
   if (req.nextUrl.searchParams.get("status") !== null) {
-    return NextResponse.json({ configured: !!cfg });
+    return json({ configured: !!cfg, version: cfg ? await getScriptVersion() : null });
   }
-  if (!cfg) return NextResponse.json({ configured: false, rows: [] });
+  if (!cfg) return json({ configured: false, rows: [] });
 
   try {
-    const res = await fetch(`${cfg.url}?token=${encodeURIComponent(cfg.token)}`, { cache: "no-store" });
-    const body = await res.json();
-    if (!body.success || !Array.isArray(body.rows)) {
-      return NextResponse.json({ configured: true, error: body.error || "Sheet returned no rows" }, { status: 502 });
-    }
-    let rows = body.rows as DailyWorkLogEntry[];
+    let rows = await listWorkLogs();
     // Members only ever receive their own rows.
     if (!viewer.isAdmin) rows = rows.filter((r) => r.developerName === viewer.account.name);
-    return NextResponse.json({ configured: true, rows });
-  } catch {
-    return NextResponse.json({ configured: true, error: "Could not reach Google Sheet" }, { status: 502 });
+    return json({ configured: true, rows });
+  } catch (err) {
+    const message = err instanceof SheetsError && err.code !== "timeout" ? err.message : "Could not reach Google Sheet";
+    return json({ configured: true, error: message }, 502);
   }
 }
 
 export async function POST(req: NextRequest) {
   const viewer = await getViewer();
-  if (!viewer) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const cfg = sheetsConfig();
-  if (!cfg) return NextResponse.json({ error: "Google Sheets is not configured on the server" }, { status: 503 });
+  if (!viewer) return json({ error: "Unauthorized" }, 401);
+  if (!sheetsConfig()) return json({ error: "Google Sheets is not configured on the server" }, 503);
+
+  const declared = Number(req.headers.get("content-length") ?? "0");
+  if (Number.isFinite(declared) && declared > MAX_BODY) return json({ error: "Request is larger than 1 MB" }, 413);
 
   let body: { action?: string; data?: unknown };
   try {
-    body = await req.json();
+    const raw = await req.text();
+    if (raw.length > MAX_BODY) return json({ error: "Request is larger than 1 MB" }, 413);
+    body = JSON.parse(raw);
   } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+    return json({ error: "Invalid JSON" }, 400);
   }
+  if (!body || typeof body !== "object") return json({ error: "Invalid JSON" }, 400);
 
-  if (body.action === "ADD_LOG") {
-    const entry = body.data as DailyWorkLogEntry;
-    if (!entry || typeof entry !== "object") return NextResponse.json({ error: "Missing entry" }, { status: 400 });
-    // A member can only write rows under their own name.
-    const data = viewer.isAdmin ? entry : { ...entry, developerName: viewer.account.name };
-    return forward(cfg, { action: "ADD_LOG", data });
-  }
-
-  if (body.action === "SYNC_ALL") {
-    if (!viewer.isAdmin) return NextResponse.json({ error: "Only the administrator can overwrite the sheet" }, { status: 403 });
-    if (!Array.isArray(body.data)) return NextResponse.json({ error: "Missing rows" }, { status: 400 });
-    return forward(cfg, { action: "SYNC_ALL", data: body.data });
-  }
-
-  return NextResponse.json({ error: "Unknown action" }, { status: 400 });
-}
-
-async function forward(cfg: { url: string; token: string }, payload: object) {
   try {
-    const res = await fetch(cfg.url, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify({ ...payload, token: cfg.token }),
-      cache: "no-store",
-    });
-    const result = await res.json();
-    return NextResponse.json(result, { status: result.success ? 200 : 502 });
-  } catch {
-    return NextResponse.json({ success: false, error: "Could not reach Google Sheet" }, { status: 502 });
+    if (body.action === "ADD_LOG") {
+      const entry = body.data as DailyWorkLogEntry;
+      if (!entry || typeof entry !== "object" || Array.isArray(entry)) return json({ error: "Missing entry" }, 400);
+      // A member can only write rows under their own name.
+      const data = viewer.isAdmin ? entry : { ...entry, developerName: viewer.account.name };
+      const result = await addWorkLog(data);
+      return json(result, result.success ? 200 : 502);
+    }
+
+    if (body.action === "SYNC_ALL") {
+      if (!viewer.isAdmin) return json({ error: "Only the administrator can overwrite the sheet" }, 403);
+      if (!Array.isArray(body.data)) return json({ error: "Missing rows" }, 400);
+      const rows = body.data.filter((r): r is DailyWorkLogEntry => !!r && typeof r === "object" && !Array.isArray(r));
+      const result = await syncAllWorkLogs(rows);
+      return json(result, result.success ? 200 : 502);
+    }
+  } catch (err) {
+    const message = err instanceof SheetsError && err.code !== "upstream" ? err.message : "Could not reach Google Sheet";
+    return json({ success: false, error: message }, 502);
   }
+
+  return json({ error: "Unknown action" }, 400);
 }

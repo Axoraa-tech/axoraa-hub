@@ -1,160 +1,165 @@
 "use client";
 
+// The frame around every view: the original sidebar card (a drawer below lg), the big title row
+// with search, notifications and the page's one primary action, the administrator banner, and the
+// floating ink pill bar on phones. Reads data, viewer and navigation from useHub().
 import React, { useState } from "react";
-import { LogOut, Menu, X } from "lucide-react";
+import Link from "next/link";
+import { ArrowLeft, Menu as MenuIcon, Plus, Search } from "lucide-react";
+import { Sheet } from "@/components/ui/Dialog";
 import { BrandMark } from "@/components/ui/BrandMark";
-import { Avatar } from "@/components/ui/primitives";
-import { logout } from "@/app/login/actions";
+import type { HubAlert } from "@/lib/alerts";
+import { useHub } from "@/lib/hub/context";
+import { useDensity } from "@/lib/prefs";
+import { mobileBarFor } from "@/lib/views";
+import { MobileNav } from "./MobileNav";
+import { NotificationsMenu } from "./NotificationsMenu";
+import { Sidebar, type LimeCardContent, type NavCounts } from "./Sidebar";
 
-export interface NavItem {
-  id: string;
+export interface PrimaryAction {
   label: string;
-  icon: React.ReactNode;
-  count?: number;
-  alert?: boolean;
-}
-
-export interface NavGroup {
-  label?: string;
-  items: NavItem[];
+  run: () => void;
 }
 
 export function AppShell({
-  groups,
-  active,
-  onNavigate,
-  viewerName,
-  viewerRole,
+  title,
+  description,
+  primary,
+  alerts,
+  onAlert,
+  counts,
+  lime,
   workspaceLabel,
   workspaceSub,
-  statusCard,
-  title,
-  subtitle,
-  headerRight,
-  banner,
+  roleLabel,
+  onOpenPalette,
+  onShortcuts,
+  mac,
   children,
 }: {
-  groups: NavGroup[];
-  active: string;
-  onNavigate: (id: string) => void;
-  viewerName: string;
-  viewerRole: string;
+  title: React.ReactNode;
+  description?: React.ReactNode;
+  primary: PrimaryAction | null;
+  alerts: readonly HubAlert[];
+  onAlert: (a: HubAlert) => void;
+  counts: NavCounts;
+  lime: LimeCardContent;
   workspaceLabel: string;
   workspaceSub: string;
-  statusCard?: React.ReactNode;
-  title: React.ReactNode;
-  subtitle?: React.ReactNode;
-  headerRight?: React.ReactNode;
-  banner?: React.ReactNode;
+  roleLabel: string;
+  onOpenPalette: () => void;
+  onShortcuts: () => void;
+  mac: boolean;
   children: React.ReactNode;
 }) {
-  const [open, setOpen] = useState(false);
+  const { viewer, view, navigate } = useHub();
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [density] = useDensity();
 
-  const sidebar = (
-    <nav className="card h-full flex flex-col p-4 overflow-hidden">
-      <div className="flex items-center justify-between px-1 pt-1">
-        <div className="flex items-center gap-3">
-          <BrandMark className="w-11 h-11" />
-          <div>
-            <div className="text-[17px] font-medium tracking-[-0.02em] leading-none">Axoraa</div>
-            <div className="text-[11.5px] text-ink-3 mt-1">Operations Hub</div>
-          </div>
-        </div>
-        <button className="icon-btn lg:hidden" aria-label="Close menu" onClick={() => setOpen(false)}>
-          <X className="w-4 h-4" />
-        </button>
-      </div>
+  const sidebarProps = { counts, lime, workspaceLabel, workspaceSub, roleLabel, onShortcuts };
 
-      <div className="mt-5 rounded-[20px] bg-surface-2 px-3.5 py-3">
-        <div className="text-[13.5px] font-medium truncate">{workspaceLabel}</div>
-        <div className="text-[12px] text-ink-3 truncate">{workspaceSub}</div>
-      </div>
-
-      <div className="mt-4 flex-1 overflow-y-auto no-scrollbar -mx-1 px-1 space-y-5">
-        {groups.map((g, gi) => (
-          <div key={gi}>
-            {g.label && <div className="px-3 mb-1.5 text-[11.5px] text-ink-3">{g.label}</div>}
-            <ul className="space-y-0.5">
-              {g.items.map((item) => {
-                const isActive = item.id === active;
-                return (
-                  <li key={item.id}>
-                    <button
-                      onClick={() => {
-                        onNavigate(item.id);
-                        setOpen(false);
-                      }}
-                      aria-current={isActive ? "page" : undefined}
-                      className={`w-full h-11 flex items-center gap-3 px-3 rounded-full text-[14px] transition-colors ${
-                        isActive ? "bg-ink text-white" : "text-ink hover:bg-surface-2"
-                      }`}
-                    >
-                      <span className={`[&>svg]:w-[18px] [&>svg]:h-[18px] ${isActive ? "text-lime" : "text-ink-2"}`}>{item.icon}</span>
-                      <span className="flex-1 text-left truncate">{item.label}</span>
-                      {typeof item.count === "number" && (
-                        <span
-                          className={`text-[12px] tabular-nums ${
-                            item.alert ? "min-w-5 h-5 px-1.5 rounded-full bg-coral text-white flex items-center justify-center" : isActive ? "text-white/60" : "text-ink-3"
-                          }`}
-                        >
-                          {item.count}
-                        </span>
-                      )}
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        ))}
-      </div>
-
-      {statusCard && <div className="mt-4">{statusCard}</div>}
-
-      <div className="mt-3 rounded-full bg-surface-2 p-1.5 pr-2 flex items-center gap-2.5">
-        <Avatar name={viewerName} size={38} />
-        <div className="flex-1 min-w-0">
-          <div className="text-[13.5px] font-medium truncate leading-tight">{viewerName}</div>
-          <div className="text-[11.5px] text-ink-3 truncate">{viewerRole}</div>
-        </div>
-        <form action={logout}>
-          <button type="submit" title="Sign out" aria-label="Sign out" className="w-9 h-9 rounded-full flex items-center justify-center text-ink-2 hover:bg-surface hover:text-coral transition-colors">
-            <LogOut className="w-4 h-4" />
-          </button>
-        </form>
-      </div>
-    </nav>
+  const searchButton = (
+    <button type="button" className="icon-btn" aria-label={`Search and commands (${mac ? "⌘" : "Ctrl"} K)`} title={`Search (${mac ? "⌘" : "Ctrl"} K)`} onClick={onOpenPalette}>
+      <Search aria-hidden />
+    </button>
   );
+  const bell = <NotificationsMenu alerts={alerts} accountId={viewer.accountId} onSelect={onAlert} />;
 
   return (
-    <div className="min-h-screen p-2.5 sm:p-3 lg:p-4 flex gap-3 lg:gap-4">
+    <div data-density={density} className="flex min-h-dvh gap-3 p-2.5 sm:p-3 lg:gap-4 lg:p-4">
       {/* Desktop sidebar */}
-      <aside className="hidden lg:block w-[280px] shrink-0 sticky top-4 h-[calc(100vh-2rem)] no-print">{sidebar}</aside>
+      <aside data-shell-chrome className="no-print sticky top-4 hidden h-[calc(100dvh-2rem)] w-[280px] shrink-0 lg:block">
+        <Sidebar {...sidebarProps} />
+      </aside>
 
-      {/* Mobile drawer */}
-      {open && (
-        <div className="lg:hidden fixed inset-0 z-40">
-          <div className="absolute inset-0 bg-ink/35 backdrop-blur-[2px]" onClick={() => setOpen(false)} />
-          <aside className="absolute left-2 top-2 bottom-2 w-[300px] max-w-[85vw] animate-rise">{sidebar}</aside>
+      {/* Phone and tablet drawer */}
+      <Sheet open={drawerOpen} onClose={() => setDrawerOpen(false)} side="left" title="Axoraa" description="Operations Hub">
+        <div data-shell-chrome className="h-full">
+          <Sidebar {...sidebarProps} inDrawer onClose={() => setDrawerOpen(false)} />
         </div>
-      )}
+      </Sheet>
 
-      <div className="flex-1 min-w-0 flex flex-col">
-        <header className="flex flex-col xl:flex-row xl:items-end justify-between gap-4 px-1 sm:px-2 pt-2 pb-5 sm:pb-6">
-          <div className="flex items-start gap-3 min-w-0">
-            <button className="icon-btn lg:hidden shrink-0 mt-1 no-print" aria-label="Open menu" onClick={() => setOpen(true)}>
-              <Menu className="w-4 h-4" />
+      <div className="mx-auto flex w-full min-w-0 max-w-[1440px] flex-1 flex-col pb-28 md:pb-6">
+        {/* Top bar below lg */}
+        <div data-shell-chrome className="no-print flex items-center justify-between gap-2 px-1 pt-1 sm:px-2 lg:hidden">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <button
+              type="button"
+              className="icon-btn"
+              aria-label="Open navigation"
+              aria-haspopup="dialog"
+              aria-expanded={drawerOpen}
+              onClick={() => setDrawerOpen(true)}
+            >
+              <MenuIcon aria-hidden />
             </button>
-            <div className="min-w-0">
-              <h1 className="title-xl break-words">{title}</h1>
-              {subtitle && <p className="text-[14px] text-ink-2 mt-2.5">{subtitle}</p>}
-            </div>
+            <BrandMark className="h-10 w-10" />
+            <span className="hidden truncate text-[15px] font-medium tracking-[-0.02em] min-[420px]:inline">Axoraa</span>
           </div>
-          {headerRight && <div className="flex flex-wrap items-center gap-2 no-print">{headerRight}</div>}
+          <div className="flex shrink-0 items-center gap-2">
+            {searchButton}
+            {bell}
+            {primary && (
+              <button
+                type="button"
+                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent text-on-accent transition-[background-color,transform] hover:bg-accent-hover active:scale-[0.96]"
+                aria-label={primary.label}
+                title={primary.label}
+                onClick={primary.run}
+              >
+                <Plus aria-hidden className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+        </div>
+
+        <header className="flex flex-col justify-between gap-4 px-1 pb-5 pt-4 sm:px-2 sm:pb-6 lg:pt-2 xl:flex-row xl:items-end">
+          <div className="min-w-0">
+            <h1 className="title-xl break-words">{title}</h1>
+            {description && <p className="mt-2.5 text-[14px] text-ink-2">{description}</p>}
+          </div>
+          <div data-shell-chrome className="no-print hidden flex-wrap items-center gap-2 lg:flex">
+            <button
+              type="button"
+              onClick={onOpenPalette}
+              className="flex h-10 items-center gap-2 rounded-full bg-surface pl-3.5 pr-2 text-[13px] text-ink-3 shadow-[inset_0_0_0_1px_var(--color-line)] transition-[box-shadow,background-color] hover:bg-surface-2 hover:shadow-[inset_0_0_0_1px_var(--color-line-strong)]"
+            >
+              <Search aria-hidden className="h-4 w-4" />
+              <span className="pr-4">Search or jump to…</span>
+              <span aria-hidden className="flex items-center gap-1">
+                <kbd className="kbd">{mac ? "⌘" : "Ctrl"}</kbd>
+                <kbd className="kbd">K</kbd>
+              </span>
+              <span className="sr-only">Open the command bar</span>
+            </button>
+            {bell}
+            {primary && (
+              <button type="button" className="btn btn-ink" onClick={primary.run} aria-keyshortcuts="n">
+                <Plus aria-hidden />
+                {primary.label}
+              </button>
+            )}
+          </div>
         </header>
-        {banner}
-        <main className="flex-1 min-w-0">{children}</main>
+
+        {viewer.viewerIsAdmin && viewer.kind === "member" && (
+          <div data-shell-chrome className="card-ink no-print mb-4 flex flex-wrap items-center justify-between gap-3 rounded-[22px]! px-4 py-3 sm:rounded-full! sm:px-5">
+            <span className="text-[13px] text-white/70">
+              You are viewing <span className="font-medium text-white">{viewer.name}</span>&apos;s workspace as administrator.
+            </span>
+            <Link href="/admin" className="btn btn-lime btn-sm">
+              <ArrowLeft aria-hidden />
+              Back to admin
+            </Link>
+          </div>
+        )}
+
+        <main id="main" className="min-w-0 flex-1">
+          {children}
+        </main>
       </div>
+
+      <MobileNav items={mobileBarFor(viewer.category)} active={view} onNavigate={(id) => navigate(id)} onMore={() => setDrawerOpen(true)} moreOpen={drawerOpen} />
     </div>
   );
 }

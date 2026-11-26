@@ -1,32 +1,81 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+
 /* =====================================================================
    AXORAA HUB — design tokens
    Warm-neutral canvas, white cards, ink black, neon lime accent,
    coral for alerts. Everything else in the app is built from these.
+   Light is the default; dark overrides live under :root[data-theme=dark]
+   (screen only, so print always uses these light values).
    ===================================================================== */
 @theme {
-  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
-
+  /* Surfaces */
   --color-canvas: #ebebe6;
+  --color-sidebar: #ffffff;
   --color-surface: #ffffff;
   --color-surface-2: #f5f5f1;
   --color-surface-3: #efefea;
+  --color-raised: #ffffff;
   --color-line: #e7e7e1;
   --color-line-strong: #d9d9d2;
+  --color-backdrop: rgba(14, 14, 15, 0.35);
+
+  /* Text */
   --color-ink: #0e0e0f;
   --color-ink-2: #56564f;
-  --color-ink-3: #93938b;
+  --color-ink-3: #7c7c74;
+
+  /* Brand */
   --color-lime: #d4ff32;
   --color-lime-deep: #b9e30f;
   --color-lime-soft: #f1ffc2;
+  --color-on-lime: #0e0e0f;
   --color-coral: #e6543a;
   --color-coral-soft: #fdebe6;
   --color-amber: #e9a23b;
   --color-amber-soft: #fcf1de;
   --color-good: #2f9e5b;
   --color-good-soft: #e6f5eb;
+
+  /* Accent: ink in light, lime in dark */
+  --color-accent: #0e0e0f;
+  --color-accent-hover: #2a2a2b;
+  --color-accent-soft: #f1ffc2;
+  --color-on-accent: #ffffff;
+
+  /* Status pairs. The plain token is text-safe on white and on its soft tint. */
+  --color-positive: #1f7f48;
+  --color-positive-soft: #e6f5eb;
+  --color-warning: #8f5a0c;
+  --color-warning-soft: #fcf1de;
+  --color-negative: #b83a22;
+  --color-negative-soft: #fdebe6;
+  --color-on-negative: #ffffff;
+
+  /* Ordered scale: pipeline stages and heatmaps (warm ink ramp) */
+  --color-step-1: #e5e5df;
+  --color-step-2: #c9c9c1;
+  --color-step-3: #93938b;
+  --color-step-4: #3f3f39;
+  --color-step-5: #0e0e0f;
+
+  /* Charts */
+  --color-compare: #d3d3cc;
+  --color-grid: #efefea;
+
+  /* Avatar tints */
+  --color-avatar-1: #d4ff32;
+  --color-avatar-2: #0e0e0f;
+  --color-avatar-3: #e5e5df;
+  --color-avatar-4: #f1ffc2;
+  --color-avatar-5: #3f3f39;
+  --color-avatar-6: #efefea;
+
+  /* The ink hero surface (.card-ink, ink chips, toasts) */
+  --color-ink-panel: #0e0e0f;
+  --color-ink-panel-2: #1d1d1f;
+  --color-on-ink-panel: #ffffff;
 
   /* Warm the whole zinc scale so older screens sit on the same palette */
   --color-zinc-50: #f8f8f5;
@@ -41,15 +90,58 @@
   --color-zinc-900: #161615;
   --color-zinc-950: #0e0e0f;
 
+  /* Type scale */
+  --text-meta: 12px;
+  --text-meta--line-height: 16px;
+  --text-table: 13px;
+  --text-table--line-height: 18px;
+  --text-body: 14px;
+  --text-body--line-height: 20px;
+  --text-heading: 17px;
+  --text-heading--line-height: 22px;
+  --text-heading--font-weight: 500;
+  --text-heading--letter-spacing: -0.02em;
+  --text-title: 22px;
+  --text-title--line-height: 28px;
+  --text-title--font-weight: 500;
+  --text-title--letter-spacing: -0.03em;
+  --text-figure: 32px;
+  --text-figure--line-height: 1;
+  --text-figure--font-weight: 450;
+  --text-figure--letter-spacing: -0.045em;
+
+  /* Radii */
   --radius-4xl: 2rem;
   --radius-card: 1.75rem;
+  --radius-inset: 1.35rem;
+  --radius-panel: 1.375rem;
+  --radius-menu: 1.25rem;
+  --radius-tile: 1.125rem;
+  --radius-field: 0.95rem;
 
   --shadow-card: 0 1px 0 rgba(14, 14, 15, 0.02), 0 1px 2px rgba(14, 14, 15, 0.04);
+  --shadow-lift: 0 1px 0 rgba(14, 14, 15, 0.02), 0 10px 24px -14px rgba(14, 14, 15, 0.22);
   --shadow-float: 0 24px 60px -24px rgba(14, 14, 15, 0.28), 0 8px 20px -12px rgba(14, 14, 15, 0.12);
+
+  --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-brand: cubic-bezier(0.2, 0.7, 0.2, 1);
 
   --animate-rise: rise 0.55s cubic-bezier(0.2, 0.7, 0.2, 1) both;
   --animate-grow-y: grow-y 0.8s cubic-bezier(0.2, 0.7, 0.2, 1) both;
   --animate-grow-x: grow-x 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  --animate-menu-in: menu-in 180ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  --animate-menu-out: menu-out 120ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  --animate-sheet-in: sheet-in 280ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  --animate-sheet-out: sheet-out 220ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  --animate-sheet-in-left: sheet-in-left 280ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  --animate-sheet-out-left: sheet-out-left 220ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  --animate-dialog-in: dialog-in 260ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  --animate-dialog-out: dialog-out 160ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  --animate-toast-in: toast-in 280ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  --animate-fade-in: fade-in 200ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  --animate-fade-out: fade-out 160ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  --animate-flash: flash 900ms cubic-bezier(0.2, 0.7, 0.2, 1);
+  --animate-soft-pulse: soft-pulse 1.6s ease-in-out infinite;
 
   @keyframes rise {
     from { opacity: 0; transform: translateY(10px); }
@@ -63,11 +155,165 @@
     from { transform: scaleX(0); }
     to { transform: scaleX(1); }
   }
+  @keyframes menu-in {
+    from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  @keyframes menu-out {
+    from { opacity: 1; }
+    to { opacity: 0; }
+  }
+  @keyframes sheet-in {
+    from { transform: translateX(100%); }
+    to { transform: translateX(0); }
+  }
+  @keyframes sheet-out {
+    from { transform: translateX(0); }
+    to { transform: translateX(100%); }
+  }
+  @keyframes sheet-in-left {
+    from { transform: translateX(-100%); }
+    to { transform: translateX(0); }
+  }
+  @keyframes sheet-out-left {
+    from { transform: translateX(0); }
+    to { transform: translateX(-100%); }
+  }
+  @keyframes dialog-in {
+    from { opacity: 0; transform: translateY(10px) scale(0.985); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  @keyframes dialog-out {
+    from { opacity: 1; transform: translateY(0) scale(1); }
+    to { opacity: 0; transform: translateY(6px) scale(0.985); }
+  }
+  @keyframes toast-in {
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes fade-out {
+    from { opacity: 1; }
+    to { opacity: 0; }
+  }
+  @keyframes flash {
+    from { background-color: var(--color-lime-soft); }
+    to { background-color: transparent; }
+  }
+  @keyframes soft-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.55; }
+  }
+}
+
+@theme inline {
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+}
+
+/* Dark. Screen only, so print keeps the light tokens. Same shapes, deeper surfaces, lime accent. */
+@media screen {
+  :root[data-theme="dark"] {
+    --color-canvas: #0c0c0d;
+    --color-sidebar: #161617;
+    --color-surface: #161617;
+    --color-surface-2: #1e1e20;
+    --color-surface-3: #242427;
+    --color-raised: #1b1b1d;
+    --color-line: rgba(255, 255, 255, 0.07);
+    --color-line-strong: rgba(255, 255, 255, 0.13);
+    --color-backdrop: rgba(0, 0, 0, 0.55);
+
+    --color-ink: #f2f2ee;
+    --color-ink-2: #b3b3aa;
+    --color-ink-3: #8a8a82;
+
+    --color-lime-soft: rgba(212, 255, 50, 0.12);
+    --color-coral: #f0664c;
+    --color-coral-soft: rgba(240, 102, 76, 0.14);
+    --color-amber-soft: rgba(233, 162, 59, 0.14);
+    --color-good: #3fb871;
+    --color-good-soft: rgba(63, 184, 113, 0.14);
+
+    --color-accent: #d4ff32;
+    --color-accent-hover: #e0ff6a;
+    --color-accent-soft: rgba(212, 255, 50, 0.12);
+    --color-on-accent: #0e0e0f;
+
+    --color-positive: #5fd08f;
+    --color-positive-soft: rgba(63, 184, 113, 0.14);
+    --color-warning: #f0b35a;
+    --color-warning-soft: rgba(233, 162, 59, 0.14);
+    --color-negative: #ff8a70;
+    --color-negative-soft: rgba(240, 102, 76, 0.14);
+    --color-on-negative: #0e0e0f;
+
+    --color-step-1: #26271f;
+    --color-step-2: #3d4a1c;
+    --color-step-3: #6f8f1f;
+    --color-step-4: #a6d12a;
+    --color-step-5: #d4ff32;
+
+    --color-compare: #3a3a3d;
+    --color-grid: rgba(255, 255, 255, 0.06);
+
+    --color-avatar-1: #d4ff32;
+    --color-avatar-2: #000000;
+    --color-avatar-3: #2c2c2f;
+    --color-avatar-4: rgba(212, 255, 50, 0.16);
+    --color-avatar-5: #3a3a33;
+    --color-avatar-6: #242427;
+
+    --color-ink-panel: #000000;
+    --color-ink-panel-2: #1c1c1e;
+    --color-on-ink-panel: #ffffff;
+
+    --color-zinc-50: #161617;
+    --color-zinc-100: #1e1e20;
+    --color-zinc-200: #29292b;
+    --color-zinc-300: #3a3a3c;
+    --color-zinc-400: #6c6c66;
+    --color-zinc-500: #8a8a82;
+    --color-zinc-600: #b3b3aa;
+    --color-zinc-700: #cfcfc8;
+    --color-zinc-800: #e2e2dc;
+    --color-zinc-900: #f2f2ee;
+    --color-zinc-950: #f7f7f3;
+
+    --shadow-card: 0 0 0 1px rgba(255, 255, 255, 0.04);
+    --shadow-lift: 0 0 0 1px rgba(255, 255, 255, 0.07), 0 12px 28px -16px rgba(0, 0, 0, 0.8);
+    --shadow-float: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 24px 60px -24px rgba(0, 0, 0, 0.8);
+
+    color-scheme: dark;
+  }
+
+  /* Lime surfaces keep ink text in dark: re-pin the text tokens inside them. */
+  :root[data-theme="dark"] :is(.card-lime, .chip-lime, .btn-lime, .bg-lime) {
+    --color-ink: #0e0e0f;
+    --color-ink-2: #3a3a33;
+    --color-ink-3: #4a4a42;
+    --color-accent: #0e0e0f;
+    --color-on-accent: #ffffff;
+    --color-line: rgba(14, 14, 15, 0.12);
+    --color-line-strong: rgba(14, 14, 15, 0.2);
+  }
+  /* Ink surfaces written as `bg-ink text-white` stay dark in dark mode, lifted off the canvas. */
+  :root[data-theme="dark"] .bg-ink:is(.text-white, .text-lime, [class*="text-white/"]) {
+    --color-ink: #2a2a2d;
+  }
+  /* Older backdrops written as bg-ink/35 */
+  :root[data-theme="dark"] :is(.bg-ink\/35, .bg-ink\/40, .bg-ink\/30) {
+    --color-ink: #000000;
+  }
 }
 
 @layer base {
   html {
     background: var(--color-canvas);
+    color-scheme: light;
   }
   body {
     background: var(--color-canvas);
@@ -79,23 +325,31 @@
   }
   ::selection {
     background: var(--color-lime);
-    color: var(--color-ink);
+    color: var(--color-on-lime);
   }
   button {
     cursor: pointer;
   }
-  button:disabled {
+  button:disabled,
+  [aria-disabled="true"] {
     cursor: not-allowed;
   }
   :focus-visible {
-    outline: 2px solid var(--color-ink);
+    outline: 2px solid var(--color-accent);
     outline-offset: 2px;
     border-radius: 10px;
+  }
+  /* Theme switches change every colour at once instead of animating each one. */
+  .theme-switching,
+  .theme-switching *,
+  .theme-switching *::before,
+  .theme-switching *::after {
+    transition: none !important;
   }
 }
 
 @layer components {
-  /* Surfaces */
+  /* ---------------------------------------------------------------- surfaces */
   .card {
     background: var(--color-surface);
     border-radius: var(--radius-card);
@@ -103,36 +357,60 @@
   }
   .card-inset {
     background: var(--color-surface-2);
-    border-radius: 1.35rem;
+    border-radius: var(--radius-inset);
   }
   .card-ink {
-    background: var(--color-ink);
-    color: #fff;
+    background: var(--color-ink-panel);
+    color: var(--color-on-ink-panel);
     border-radius: var(--radius-card);
   }
   .card-lime {
     background: var(--color-lime);
-    color: var(--color-ink);
+    color: var(--color-on-lime);
     border-radius: var(--radius-card);
+  }
+  /* Interactive cards lift 1px with a slightly stronger shadow. */
+  .card-interactive {
+    transition: transform 0.2s var(--ease-brand), box-shadow 0.2s var(--ease-brand), background-color 0.18s;
+  }
+  .card-interactive:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-lift);
+  }
+  .card-interactive:active {
+    transform: translateY(0) scale(0.995);
+  }
+  /* A card-shaped box for new code: same as .card. */
+  .panel {
+    background: var(--color-surface);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+  }
+  .panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 56px;
+    padding: 20px 24px 8px;
+    font-size: var(--text-heading);
+    line-height: var(--text-heading--line-height);
+    letter-spacing: -0.02em;
+    font-weight: 500;
+  }
+  .divide-hair > * + * {
+    border-top: 1px solid var(--color-line);
   }
 
   /* Hand-drawn diagonal texture used for "inactive" chart marks */
   .hatch {
     background-color: var(--color-surface-2);
-    background-image: repeating-linear-gradient(
-      -45deg,
-      rgba(14, 14, 15, 0.16) 0 1px,
-      transparent 1px 7px
-    );
+    background-image: repeating-linear-gradient(-45deg, rgba(14, 14, 15, 0.16) 0 1px, transparent 1px 7px);
     box-shadow: inset 0 0 0 1px rgba(14, 14, 15, 0.12);
   }
   .hatch-dark {
     background-color: #1b1b1c;
-    background-image: repeating-linear-gradient(
-      -45deg,
-      rgba(255, 255, 255, 0.14) 0 1px,
-      transparent 1px 7px
-    );
+    background-image: repeating-linear-gradient(-45deg, rgba(255, 255, 255, 0.14) 0 1px, transparent 1px 7px);
     box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
   }
   .dashed-slot {
@@ -141,15 +419,18 @@
     border: 1.5px dashed rgba(14, 14, 15, 0.18);
   }
 
-  /* Typography */
+  /* ---------------------------------------------------------------- typography */
   .num {
     font-variant-numeric: tabular-nums;
     letter-spacing: -0.045em;
     font-weight: 450;
     line-height: 0.95;
   }
+  .text-figure {
+    font-variant-numeric: tabular-nums;
+  }
   .eyebrow {
-    font-size: 11px;
+    font-size: 11.5px;
     font-weight: 500;
     letter-spacing: 0.01em;
     color: var(--color-ink-3);
@@ -161,7 +442,7 @@
     line-height: 1;
   }
 
-  /* Controls */
+  /* ---------------------------------------------------------------- buttons */
   .btn {
     display: inline-flex;
     align-items: center;
@@ -173,38 +454,80 @@
     font-size: 13px;
     font-weight: 500;
     white-space: nowrap;
+    user-select: none;
     transition: background-color 0.18s, color 0.18s, box-shadow 0.18s, transform 0.18s;
   }
-  .btn:active {
+  .btn:active:not(:disabled) {
     transform: translateY(0.5px) scale(0.99);
   }
-  .btn-ink {
-    background: var(--color-ink);
-    color: #fff;
+  .btn:disabled,
+  .btn[aria-disabled="true"] {
+    opacity: 0.5;
   }
-  .btn-ink:hover {
-    background: #2a2a2b;
-  }
-  .btn-lime {
-    background: var(--color-lime);
-    color: var(--color-ink);
-  }
-  .btn-lime:hover {
-    background: var(--color-lime-deep);
-  }
-  .btn-ghost {
-    background: var(--color-surface);
-    color: var(--color-ink);
-    box-shadow: inset 0 0 0 1px var(--color-line);
-  }
-  .btn-ghost:hover {
-    box-shadow: inset 0 0 0 1px var(--color-line-strong);
-    background: var(--color-surface-2);
+  .btn svg.lucide {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
   }
   .btn-sm {
     height: 2rem;
     padding: 0 0.85rem;
     font-size: 12px;
+  }
+  .btn-sm svg.lucide {
+    width: 14px;
+    height: 14px;
+  }
+  .btn-lg {
+    height: 3rem;
+    padding: 0 1.4rem;
+    font-size: 14px;
+  }
+  /* Primary: ink pill in light, lime pill in dark. */
+  .btn-ink,
+  .btn-primary {
+    background: var(--color-accent);
+    color: var(--color-on-accent);
+  }
+  .btn-ink:hover:not(:disabled),
+  .btn-primary:hover:not(:disabled) {
+    background: var(--color-accent-hover);
+  }
+  .btn-lime {
+    background: var(--color-lime);
+    color: var(--color-on-lime);
+  }
+  .btn-lime:hover:not(:disabled) {
+    background: var(--color-lime-deep);
+  }
+  .btn-ghost,
+  .btn-secondary {
+    background: var(--color-surface);
+    color: var(--color-ink);
+    box-shadow: inset 0 0 0 1px var(--color-line);
+  }
+  .btn-ghost:hover:not(:disabled),
+  .btn-secondary:hover:not(:disabled) {
+    box-shadow: inset 0 0 0 1px var(--color-line-strong);
+    background: var(--color-surface-2);
+  }
+  /* Text-only pill for low-emphasis actions (toolbars, toasts). */
+  .btn-plain {
+    background: transparent;
+    color: var(--color-ink-2);
+  }
+  .btn-plain:hover:not(:disabled) {
+    background: var(--color-surface-2);
+    color: var(--color-ink);
+  }
+  .btn-danger,
+  .btn-coral {
+    background: var(--color-coral);
+    color: #ffffff;
+  }
+  .btn-danger:hover:not(:disabled),
+  .btn-coral:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--color-coral) 88%, black);
   }
   .icon-btn {
     display: inline-flex;
@@ -212,17 +535,59 @@
     justify-content: center;
     width: 2.5rem;
     height: 2.5rem;
+    flex-shrink: 0;
     border-radius: 999px;
     background: var(--color-surface);
     color: var(--color-ink);
     box-shadow: inset 0 0 0 1px var(--color-line);
-    transition: background-color 0.18s, box-shadow 0.18s;
+    transition: background-color 0.18s, box-shadow 0.18s, color 0.18s, transform 0.18s;
   }
-  .icon-btn:hover {
+  .icon-btn:hover:not(:disabled),
+  .icon-btn[aria-expanded="true"] {
     background: var(--color-surface-2);
     box-shadow: inset 0 0 0 1px var(--color-line-strong);
   }
+  .icon-btn:active:not(:disabled) {
+    transform: scale(0.96);
+  }
+  .icon-btn:disabled {
+    opacity: 0.45;
+  }
+  .icon-btn svg.lucide {
+    width: 16px;
+    height: 16px;
+  }
+  .icon-btn-sm {
+    width: 2rem;
+    height: 2rem;
+  }
+  .icon-btn-sm svg.lucide {
+    width: 14px;
+    height: 14px;
+  }
+  /* Borderless round button (inside cards, toasts and rows). */
+  .icon-btn-plain {
+    background: transparent;
+    box-shadow: none;
+    color: var(--color-ink-2);
+  }
+  .icon-btn-plain:hover:not(:disabled),
+  .icon-btn-plain[aria-expanded="true"] {
+    box-shadow: none;
+    background: var(--color-surface-2);
+    color: var(--color-ink);
+  }
+  @media (pointer: coarse) {
+    .btn-sm {
+      min-height: 40px;
+    }
+    .icon-btn-sm {
+      min-width: 40px;
+      min-height: 40px;
+    }
+  }
 
+  /* ---------------------------------------------------------------- chips, badges, dots, keys */
   .chip {
     display: inline-flex;
     align-items: center;
@@ -230,7 +595,7 @@
     height: 1.6rem;
     padding: 0 0.6rem;
     border-radius: 999px;
-    font-size: 11.5px;
+    font-size: 12px;
     font-weight: 500;
     white-space: nowrap;
     background: var(--color-surface-2);
@@ -238,70 +603,272 @@
   }
   .chip-lime {
     background: var(--color-lime);
-    color: var(--color-ink);
+    color: var(--color-on-lime);
   }
   .chip-ink {
-    background: var(--color-ink);
-    color: #fff;
+    background: var(--color-ink-panel);
+    color: var(--color-on-ink-panel);
   }
   .chip-coral {
     background: var(--color-coral-soft);
-    color: #b83a22;
+    color: var(--color-negative);
   }
   .chip-amber {
     background: var(--color-amber-soft);
-    color: #8f5a0c;
+    color: var(--color-warning);
   }
   .chip-good {
     background: var(--color-good-soft);
-    color: #1d6b3c;
+    color: var(--color-positive);
+  }
+  .chip-outline {
+    background: transparent;
+    box-shadow: inset 0 0 0 1px var(--color-line-strong);
   }
 
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    height: 1.35rem;
+    padding: 0 0.5rem;
+    border-radius: 999px;
+    background: var(--color-surface-2);
+    color: var(--color-ink-2);
+    font-size: 11.5px;
+    line-height: 1;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  .badge-accent { background: var(--color-lime); color: var(--color-on-lime); }
+  .badge-positive { background: var(--color-good-soft); color: var(--color-positive); }
+  .badge-warning { background: var(--color-amber-soft); color: var(--color-warning); }
+  .badge-negative { background: var(--color-coral-soft); color: var(--color-negative); }
+
+  .dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 999px;
+    flex-shrink: 0;
+    background: var(--color-ink-3);
+  }
+  .dot-positive { background: var(--color-good); }
+  .dot-warning { background: var(--color-amber); }
+  .dot-negative { background: var(--color-coral); }
+  .dot-neutral { background: var(--color-ink-3); }
+  .dot-accent { background: var(--color-accent); }
+  .chip-lime .dot-accent { background: var(--color-on-lime); }
+
+  .kbd {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.4rem;
+    height: 1.4rem;
+    padding: 0 0.4rem;
+    border-radius: 0.45rem;
+    background: var(--color-surface-2);
+    box-shadow: inset 0 0 0 1px var(--color-line), inset 0 -1px 0 var(--color-line-strong);
+    color: var(--color-ink-2);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    line-height: 1;
+  }
+
+  /* ---------------------------------------------------------------- fields */
   .field {
+    display: block;
     width: 100%;
     height: 2.75rem;
     padding: 0 1rem;
-    border-radius: 0.95rem;
+    border-radius: var(--radius-field);
     background: var(--color-surface-2);
     font-size: 14px;
     color: var(--color-ink);
     box-shadow: inset 0 0 0 1px transparent;
     transition: box-shadow 0.18s, background-color 0.18s;
   }
+  textarea.field {
+    height: auto;
+    min-height: 6rem;
+    padding: 0.75rem 1rem;
+    line-height: 1.45;
+    resize: vertical;
+  }
   .field::placeholder {
     color: var(--color-ink-3);
   }
-  .field:focus {
+  .field:hover:not(:disabled):not(:focus) {
+    box-shadow: inset 0 0 0 1px var(--color-line-strong);
+  }
+  .field:focus,
+  .field:focus-visible {
     outline: none;
     background: var(--color-surface);
-    box-shadow: inset 0 0 0 1.5px var(--color-ink);
+    box-shadow: inset 0 0 0 1.5px var(--color-accent);
+  }
+  .field[aria-invalid="true"] {
+    background: var(--color-coral-soft);
+    box-shadow: inset 0 0 0 1.5px var(--color-coral);
+  }
+  .field[aria-invalid="true"]:focus {
+    background: var(--color-surface);
+    box-shadow: inset 0 0 0 1.5px var(--color-coral);
+  }
+  .field:disabled {
+    color: var(--color-ink-3);
+    opacity: 0.75;
+  }
+  .field-sm {
+    height: 2.25rem;
+    padding: 0 0.85rem;
+    border-radius: 0.8rem;
+    font-size: 13px;
+  }
+  @media (pointer: coarse) {
+    .field,
+    .field-sm {
+      font-size: 16px;
+    }
   }
 
-  /* Tables */
-  .table-clean {
+  /* ---------------------------------------------------------------- tables */
+  .table-clean,
+  .table {
     width: 100%;
     text-align: left;
     font-size: 13px;
     border-collapse: separate;
     border-spacing: 0;
   }
-  .table-clean thead th {
+  .table-clean thead th,
+  .table thead th {
     font-size: 11.5px;
     font-weight: 500;
     color: var(--color-ink-3);
     padding: 0 1rem 0.75rem;
     white-space: nowrap;
+    text-align: left;
   }
-  .table-clean tbody td {
+  .table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    padding-top: 0.25rem;
+    background: var(--color-surface);
+  }
+  .table-clean tbody td,
+  .table tbody td {
     padding: 0.85rem 1rem;
     border-top: 1px solid var(--color-line);
     vertical-align: middle;
+    transition: background-color 0.15s, border-color 0.15s;
   }
-  .table-clean tbody tr {
-    transition: background-color 0.15s;
-  }
-  .table-clean tbody tr:hover {
+  /* Rows round on hover: the hovered row and the one after it drop their dividers. */
+  .table-clean tbody tr:hover > td,
+  .table tbody tr:hover > td,
+  .table tbody tr[aria-selected="true"] > td {
     background: var(--color-surface-2);
+    border-top-color: transparent;
+  }
+  .table-clean tbody tr:hover + tr > td,
+  .table tbody tr:hover + tr > td,
+  .table tbody tr[aria-selected="true"] + tr > td {
+    border-top-color: transparent;
+  }
+  .table-clean tbody tr > td:first-child,
+  .table tbody tr > td:first-child {
+    border-top-left-radius: 12px;
+    border-bottom-left-radius: 12px;
+  }
+  .table-clean tbody tr > td:last-child,
+  .table tbody tr > td:last-child {
+    border-top-right-radius: 12px;
+    border-bottom-right-radius: 12px;
+  }
+  .table tbody tr[aria-selected="true"] > td {
+    background: var(--color-lime-soft);
+  }
+  .table-compact tbody td {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+  }
+  @media (pointer: coarse) {
+    .table tbody td {
+      padding-top: 0.95rem;
+      padding-bottom: 0.95rem;
+    }
+  }
+
+  /* ---------------------------------------------------------------- helpers */
+  .skeleton {
+    display: block;
+    background: var(--color-surface-2);
+    border-radius: 0.75rem;
+    animation: var(--animate-soft-pulse);
+  }
+  .drop-target {
+    background: var(--color-lime-soft);
+    box-shadow: 0 0 0 2px var(--color-lime);
+  }
+  .print-only {
+    display: none;
+  }
+  /* Shown only after a delay (300ms by default) so fast loads never flash a skeleton. */
+  .delay-reveal {
+    animation: delay-reveal 0s linear var(--reveal-delay, 300ms) both;
+  }
+  @keyframes delay-reveal {
+    from { visibility: hidden; }
+    to { visibility: visible; }
+  }
+  /* Paper preview for printable documents: always the light palette. */
+  .paper {
+    --color-surface: #ffffff;
+    --color-surface-2: #f5f5f1;
+    --color-surface-3: #efefea;
+    --color-line: #e7e7e1;
+    --color-line-strong: #d9d9d2;
+    --color-ink: #0e0e0f;
+    --color-ink-2: #56564f;
+    --color-ink-3: #7c7c74;
+    --color-accent: #0e0e0f;
+    --color-accent-soft: #f1ffc2;
+    --color-lime-soft: #f1ffc2;
+    --color-negative: #b83a22;
+    --color-warning: #8f5a0c;
+    --color-warning-soft: #fcf1de;
+    --color-amber-soft: #fcf1de;
+    --color-ink-panel: #0e0e0f;
+    background: #ffffff;
+    color: #0e0e0f;
+    color-scheme: light;
+  }
+}
+
+/* Dark refinements for classes that draw with fixed light-mode values. */
+@media screen {
+  :root[data-theme="dark"] .card-ink {
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
+  }
+  :root[data-theme="dark"] .chip-ink {
+    background: #2a2a2d;
+  }
+  :root[data-theme="dark"] .hatch {
+    background-color: #1b1b1c;
+    background-image: repeating-linear-gradient(-45deg, rgba(255, 255, 255, 0.14) 0 1px, transparent 1px 7px);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+  }
+  :root[data-theme="dark"] .dashed-slot {
+    border-color: rgba(255, 255, 255, 0.18);
+  }
+  :root[data-theme="dark"] .btn-danger,
+  :root[data-theme="dark"] .btn-coral {
+    color: #0e0e0f;
+  }
+  :root[data-theme="dark"] .paper {
+    --color-surface-2: #f5f5f1;
   }
 }
 
@@ -314,13 +881,14 @@
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #d3d3cc;
+  background: var(--color-zinc-300);
   border-radius: 999px;
   border: 2px solid transparent;
   background-clip: padding-box;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #a2a29a;
+  background: var(--color-zinc-400);
+  border: 2px solid transparent;
   background-clip: padding-box;
 }
 .no-scrollbar::-webkit-scrollbar {
@@ -334,11 +902,14 @@
 .bg-lime-neon {
   background-color: var(--color-lime);
 }
-.shadow-card-subtle {
-  box-shadow: var(--shadow-card);
-}
+.shadow-card-subtle,
 .shadow-card-elevated {
   box-shadow: var(--shadow-card);
+}
+
+/* The print copy of a document lives here; it is never shown on screen. */
+#print-root {
+  display: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -346,22 +917,54 @@
   *::before,
   *::after {
     animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .animate-flash,
+  .skeleton {
+    animation: none !important;
+  }
+  .card-interactive:hover {
+    transform: none;
   }
 }
 
+@page {
+  size: A4;
+  margin: 14mm;
+}
+
 @media print {
+  html,
+  :root[data-theme="dark"] {
+    color-scheme: light !important;
+  }
+  html,
+  body {
+    background: #ffffff !important;
+  }
+  [data-shell-chrome],
   .no-print {
     display: none !important;
   }
-  body,
-  html {
-    background: #fff !important;
+  .print-only {
+    display: block !important;
   }
   .card,
-  .card-inset {
+  .card-inset,
+  .panel {
     box-shadow: none !important;
     border: 1px solid #e5e5df;
     break-inside: avoid;
+  }
+  html[data-printing="doc"] body > *:not(#print-root) {
+    display: none !important;
+  }
+  html[data-printing="doc"] #print-root {
+    display: block !important;
+    position: static !important;
+    height: auto !important;
+    overflow: visible !important;
   }
 }
